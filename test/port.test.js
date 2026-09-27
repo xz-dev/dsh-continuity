@@ -7,7 +7,7 @@ import {userBlocksFromEvents,prepareEvidence,selectEvidence,renderEvidence,parse
 import {selectLatestStep,renderLatestStep} from '../src/step.js';
 
 const price=s=>Math.ceil(s.length/4);
-const user=(seq,text,kind='user')=>({seq,type:'user/message',data:{message:{role:'user',source:{kind},content:[{type:'text',text}]}}});
+const user=(seq,text,kind='user')=>({seq,type:'user/message',data:{role:'user',source:{kind},content:[{type:'text',text}],id:`u${seq}`}}); // real DSH v4 shape: data IS the message
 const assistant=(seq,content)=>({seq,type:'assistant/message',data:{message:{role:'assistant',source:{kind:'model'},content}}});
 const summary={task:'Answer question',doneWhen:'Response given',constraints:['Do not edit'],established:[],open:['Question unanswered'],next:[]};
 
@@ -95,11 +95,11 @@ test('manual command validates mode, commits before one explicit followup and ig
  assert.equal(followups.length,1);
 });
 test('automatic compaction commits six fields, exact original quotation and durable coverage',async()=>{
- const inputUser=user(1,'Never change security rules.'); inputUser.data.message.id='u1';
+ const inputUser=user(1,'Never change security rules.'); inputUser.data.id='u1';
  const a=assistant(2,[{type:'text',text:'Understood.'}]); a.data.message.id='a1';
  const start={seq:3,type:'compaction/start',data:{turn:1}};
  const table=new Map([[1,inputUser],[2,a]]);
- const session={id:'session-1',surface:{nodes:[1,2]},snapshotEvents:()=>[inputUser,a,start],eventAt:seq=>table.get(seq),deriveEventMessage:e=>e.data.message,requestHeader:()=>({config:{provider:'fake',model:'m'}}),toolHistory:()=>({tools:[],updates:[]})};
+ const session={id:'session-1',surface:{nodes:[1,2]},snapshotEvents:()=>[inputUser,a,start],eventAt:seq=>table.get(seq),deriveEventMessage:e=>e.type==='user/message'?e.data:e.data.message,requestHeader:()=>({config:{provider:'fake',model:'m'}}),toolHistory:()=>({tools:[],updates:[]})};
  let requests=0;
  const engine=Object.create(ContinuityEngine.prototype);
  engine.manualRequests=new WeakSet();
@@ -116,7 +116,7 @@ test('automatic compaction commits six fields, exact original quotation and dura
    yield {type:'finish',reason:{kind:'tool-calls'}};
  }},logger:{warn:x=>warnings.push(x)}};
  engine.config={thresholdRatio:.8,headroomTokens:65536,retainRatio:.16,summarizationProvider:'',summarizationModel:'',maxTokens:65536,compactionRetries:1,maxOverflowRetries:1,modelPolicies:[],auto:true};
- const result=await engine.summarize({messages:[inputUser.data.message,a.data.message]}, {session,options:{provider:'fake',model:'m'}});
+ const result=await engine.summarize({messages:[inputUser.data,a.data.message]}, {session,options:{provider:'fake',model:'m'}});
  assert.deepEqual(warnings,[]);
  assert.equal(requests,1);
  const text=result.summary[0].text;

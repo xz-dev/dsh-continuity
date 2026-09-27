@@ -15,6 +15,12 @@ function isRecord(value) {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
+// DSH v4 log: `user/message` data IS the message ({role,source,content,id});
+// assistant/message and tool/result nest it under `data.message`.
+export function userMessage(event) {
+  return event?.type === "user/message" && isRecord(event.data) ? event.data : undefined;
+}
+
 function isKind(value) {
   return KINDS.includes(value);
 }
@@ -81,8 +87,8 @@ export function parseRenderedEvidence(summaryText) {
 export function userBlocksFromEvents(events) {
   const blocks = [];
   events.forEach(({ event, branchOrder }) => {
-    if (!event || event.type !== "user/message" || event.data?.message?.source?.kind !== "user") return;
-    const content = event.data.message.content;
+    if (userMessage(event)?.source?.kind !== "user") return;
+    const content = userMessage(event).content;
     const parts = Array.isArray(content) ? content : [];
     parts.forEach((part, blockIndex) => {
       if (isRecord(part) && part.type === "text" && typeof part.text === "string") {
@@ -122,7 +128,7 @@ export function prepareEvidence(options, budget = 6144) {
       let block = key !== undefined ? blocks.get(key) : undefined;
       if (!block && key !== undefined) {
         const event = resolveEvent(value.entryId);
-        const content = event?.type === "user/message" && event.data?.message?.source?.kind === "user" ? event.data.message.content : undefined;
+        const content = userMessage(event)?.source?.kind === "user" ? userMessage(event).content : undefined;
         const parts = Array.isArray(content) ? content : [];
         const part = parts[value.blockIndex];
         if (isRecord(part) && part.type === "text" && typeof part.text === "string") {

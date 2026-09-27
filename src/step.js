@@ -1,3 +1,4 @@
+import { userMessage } from "./evidence.js";
 // dsh-continuity latest-step recap: port of pi-continuity internal/continuity-step.ts.
 //
 // Pi selects from ordered branchEntries; DSH selects from the durable session
@@ -71,8 +72,8 @@ export function selectLatestStep(events) {
   const resultText = [];
   for (const next of events.slice(index + 1)) {
     if (next.type === "assistant/message") break;
-    if (next.type === "user/message" && next.data?.message?.source?.kind === "user") {
-      step.laterUserInput.push({ entryId: String(next.seq), text: visibleContent(next.data.message.content) });
+    if (userMessage(next)?.source?.kind === "user") {
+      step.laterUserInput.push({ entryId: String(next.seq), text: visibleContent(userMessage(next).content) });
     } else if (next.type === "tool/result") {
       const result = next.data.message;
       const callId = result?.toolCallId;

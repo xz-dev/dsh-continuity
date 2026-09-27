@@ -1,7 +1,7 @@
 import { BasicCompactionEngine } from '@deepseek-ai/dsh-compaction-basic';
 import { BlockAssembler } from '@deepseek-ai/dsh-llm';
 import { estimateContent } from '@deepseek-ai/dsh-token-meter/estimate';
-import { prepareEvidence, parseRenderedEvidence, renderEvidence, reduceSources, selectEvidence, userBlocksFromEvents } from './evidence.js';
+import { userMessage, prepareEvidence, parseRenderedEvidence, renderEvidence, reduceSources, selectEvidence, userBlocksFromEvents } from './evidence.js';
 import { renderLatestStep, selectLatestStep, STEP_CONTENT_TOKENS } from './step.js';
 
 const MAX_ITEMS = 128;
@@ -122,15 +122,15 @@ export class ContinuityEngine extends BasicCompactionEngine {
     const cutoff=positions.at(-1)+1;
     const boundary=cutoff;
     if (!input.messages.some(m=>m.role==='user' || m.role==='assistant') || boundary<=0) throw Error('invalid-boundary');
-    const latest=surface.filter(e=>e?.type==='user/message' && e.data.message.source.kind==='compact-checkpoint').at(-1);
-    const previous=contentText(latest?.data.message.content??[]);
+    const latest=surface.filter(e=>userMessage(e)?.source?.kind==='compact-checkpoint').at(-1);
+    const previous=contentText(userMessage(latest)?.content??[]);
     const prior=latest ? parseRenderedEvidence(previous):undefined;
     const userEvents=surface.map((event,branchOrder)=>({event,branchOrder}));
     const blocks=userBlocksFromEvents(userEvents);
     const priorOrder=latest ? surface.indexOf(latest)+1 : undefined;
     const evidence=prepareEvidence({blocks,boundaryOrder:cutoff,carriedRefs:prior,priorLowerOrder:priorOrder,resolveEvent:(id)=>session.eventAt(Number(id)),textTokens:tokens});
     if (!evidence) throw Error('invalid-boundary');
-    const originalEvents=events.filter(e=>e.type!=='assistant/message' || !e.data.message.source || e.data.message.source.kind==='model');
+    const originalEvents=events.filter(e=>e.type!=='assistant/message' || !e.data?.message?.source || e.data.message.source.kind==='model');
     const step=selectLatestStep(originalEvents);
     let recap=renderLatestStep(step,tokens);
     const later=JSON.stringify(step?.laterUserInput??[]);
