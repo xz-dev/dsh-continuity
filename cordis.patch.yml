@@ -1,0 +1,9 @@
+# Default only for new sessions when no explicit /preset selection exists.
+# TUI's static preset remains undefined; it uses registry default. Existing
+# user-selected /preset preferences retain precedence.
+- id: dsh-tui-agent-preset-registry
+  config:
+    default: continuity
+- insert:
+    - id: dsh-continuity
+      name: dsh-continuity

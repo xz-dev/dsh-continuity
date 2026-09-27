@@ -1,0 +1,5 @@
+node_modules/
+*.tgz
+.scratch-home
+.tmux-name
+pnpm-lock.yaml

@@ -1,0 +1,34 @@
+{
+  "name": "dsh-continuity",
+  "version": "0.1.0",
+  "description": "Source-verified continuity summaries for DeepSeek Harness compaction",
+  "type": "module",
+  "main": "./src/index.js",
+  "exports": { ".": "./src/index.js", "./engine": "./src/engine-plugin.js", "./cordis.patch.yml": "./cordis.patch.yml" },
+  "files": ["src", "cordis.patch.yml", "BEHAVIOR.md", "README.md", "LICENSE"],
+  "dsh": {"bundle": {"patch": "./cordis.patch.yml"}},
+  "scripts": {"test": "node --test test/"},
+  "license": "MIT",
+  "author": "Xiangzhe",
+  "repository": {"type":"git","url":"git+https://github.com/xz-dev/dsh-continuity.git"},
+  "engines": {"node":">=22.19.0"},
+  "dependencies": {
+    "@deepseek-ai/dsh-compaction":"0.1.7-rc.2",
+    "@deepseek-ai/dsh-compaction-basic":"0.1.7-rc.2",
+    "@deepseek-ai/dsh-llm":"0.1.7-rc.2",
+    "@deepseek-ai/dsh-token-meter":"0.1.7-rc.2",
+    "@deepseek-ai/dsh-web-app":"0.1.7-rc.2",
+    "@deepseek-ai/cordis-plugin-include":"1.0.9",
+    "js-yaml":"4.3.2"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/dsh-compaction":"0.1.7-rc.2",
+    "@deepseek-ai/dsh-compaction-basic":"0.1.7-rc.2",
+    "@deepseek-ai/dsh-llm":"0.1.7-rc.2",
+    "@deepseek-ai/dsh-token-meter":"0.1.7-rc.2",
+    "@deepseek-ai/dsh-agent-preset-registry":"0.1.7-rc.2",
+    "@deepseek-ai/dsh-web-app":"0.1.7-rc.2",
+    "@deepseek-ai/cordis-plugin-include":"1.0.9",
+    "js-yaml":"4.3.2"
+  }
+}
