@@ -21,6 +21,16 @@ test('preset clones official standard; swaps only isolated compaction row',async
  assert.ok(def.plugins.some(p=>p.id==='tool-bash'));
 });
 
+test('disable switches off named rows at any depth and rejects unknown ids',async()=>{
+ const def=await continuityPreset(undefined,['tool-web','tool-todo','tool-subagent-fork']);
+ const find=(rows,id)=>{ for(const r of rows){ if(r.id===id) return r; const hit=Array.isArray(r.config)&&find(r.config,id); if(hit) return hit; } };
+ assert.equal(find(def.plugins,'tool-web').disabled,true);
+ assert.equal(find(def.plugins,'tool-todo').disabled,true);
+ assert.equal(find(def.plugins,'tool-subagent-fork').disabled,true);
+ assert.notEqual(find(def.plugins,'tool-bash').disabled,true);
+ await assert.rejects(continuityPreset(undefined,['no-such-row']),/no-such-row/);
+});
+
 test('strict six-field submission rejects partial, duplicate and phantom fields',()=>{
  assert.deepEqual(validateSubmission({summary,quotes:[],retire:[]}).summary,summary);
  assert.match(renderSummary(summary),/## Next\n- None recorded\./);

@@ -12,7 +12,9 @@ export const inject = ['agentPresets','commands'];
 
 // Read current official standard composition instead of shipping a drifting copy.
 // Standard's source stays version-pinned through the DSH peer dependency.
-export async function continuityPreset(load = readFile) {
+// `disable` lists row ids (any depth) to switch off in the clone, for rows a
+// profile replaces with its own plugin (e.g. tool-web → dsh-web-access).
+export async function continuityPreset(load = readFile, disable = []) {
   const require = createRequire(import.meta.url);
   const source = require.resolve('@deepseek-ai/dsh-web-app/presets/standard.patch.yml');
   const patch = yaml.load(await load(source,'utf8'),{schema:entryListSchema});
@@ -23,6 +25,10 @@ export async function continuityPreset(load = readFile) {
   if (!row || !group.isolate?.compaction) throw Error('standard preset has no isolated basic compaction');
   row.name=new URL('./engine-plugin.js',import.meta.url).href;
   row.config={};
+  const off=new Set(disable);
+  const walk=rows=>{ for(const r of rows??[]){ if(off.has(r?.id)){ r.disabled=true; off.delete(r.id); } if(Array.isArray(r?.config)) walk(r.config); } };
+  walk(definition.plugins);
+  if(off.size) throw Error(`continuity: disable names rows the standard preset lacks: ${[...off].join(', ')}`);
   definition.id='continuity';
   definition.name='Continuity';
   definition.description='Standard tools with source-verified continuity compaction';
@@ -49,8 +55,8 @@ export async function continuityCommand(ctx, invocation) {
   }
 }
 
-export async function apply(ctx) {
-  const preset=await continuityPreset();
+export async function apply(ctx, config) {
+  const preset=await continuityPreset(readFile, config?.disable ?? []);
   ctx.effect(async function* () { yield await ctx.agentPresets.register(preset); });
   ctx.effect(function* () { yield ctx.commands.register({name:'continuity',description:'Compact with continuity summary; add continue to resume',handler: inv=>continuityCommand(ctx,inv)}); });
 }
